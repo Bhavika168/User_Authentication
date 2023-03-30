@@ -1,14 +1,17 @@
 package login
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"image"
+	"image/png"
 	"net/http"
+	"os"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	db.AutoMigrate(&User{})
 	var u User
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
@@ -17,12 +20,23 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if CheckUserPassword(u.Username, u.Password) {
-		secret := SetSecretKey(u.Username)
-		message := Message{Status: "Successful", YourKey: secret, Message: "Enter Your OTP"}
-		jsonStr, _ := json.Marshal(message)
-		w.Write(jsonStr)
+		code := GenerateQRcode(u.Username)
+		SetSessionQR(u.Username, code)
+
+		file, _ := os.Open("qr.png")
+		defer file.Close()
+		img, _, _ := image.Decode(file)
+
+		var buf []byte
+		png.Encode(w, img)
+		base64Str := base64.StdEncoding.EncodeToString(buf)
+		QRcode, _ := json.Marshal(map[string]string{"qr_base64": base64Str})
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(QRcode)
 
 	} else {
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
 		data := Data{Status: "Unsuccessful", Message: "User not found."}
 		jsonStr, _ := json.Marshal(data)

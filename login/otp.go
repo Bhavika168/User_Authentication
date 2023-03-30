@@ -16,7 +16,6 @@ type TOTP struct {
 
 func CheckOTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-
 	defer func() {
 		if err := recover(); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -41,12 +40,10 @@ func CheckOTP(w http.ResponseWriter, r *http.Request) {
 	} else {
 		panic("Wrong OTP.")
 	}
-
 }
 
 func SetSecretKey(name string) string {
 	ctx := context.Background()
-
 	if err := db.WithContext(ctx).AutoMigrate(&User{}); err != nil {
 		panic("failed to migrate database schema")
 	}
@@ -68,7 +65,6 @@ func SetSecretKey(name string) string {
 }
 
 func GetSecretKey(code string) string {
-
 	ctx := context.Background()
 	name, err := rdb.Get(ctx, code).Result()
 	if err != nil {

@@ -20,7 +20,7 @@ type User struct {
 }
 
 func TestDb(t *testing.T) {
-	dsn := "host=172.27.192.1 user=postgres password=123456 dbname=first_db port=9000 sslmode=disable"
+	dsn := "host=postgres user=postgres password=123456 dbname=first_db port=5432 sslmode=disable"
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

@@ -31,7 +31,7 @@ type Message struct {
 }
 
 func InitialiseDb() *gorm.DB {
-	dsn := "host=172.27.192.1 user=postgres password=123456 dbname=first_db port=9000 sslmode=disable"
+	dsn := "host=postgres user=postgres password=123456 dbname=first_db port=5432 sslmode=disable"
 	fmt.Println(dsn)
 	db, _ = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	return db
@@ -39,7 +39,7 @@ func InitialiseDb() *gorm.DB {
 
 func InitialiseRedis() *redis.Client {
 	rdb = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     "redis:6379",
 		Password: "",
 		DB:       0,
 	})

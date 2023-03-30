@@ -18,33 +18,52 @@ import (
 
 func Signup(w http.ResponseWriter, r *http.Request) {
 
-	ctx := context.Background()
 	db.AutoMigrate(&User{})
 	var u User
 	json.NewDecoder(r.Body).Decode(&u)
 
-	hpassword, _ := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
-	secretcode := GenerateSecretUserKey()
+	if !CheckUserDB(u.Username, u.Password) {
+		code := GenerateQRcode(u.Username)
+		SetSessionQR(u.Username, code)
 
-	user := User{Username: u.Username, Password: string(hpassword), Secret: secretcode}
-	if err := db.WithContext(ctx).Create(&user).Error; err != nil {
-		panic("failed to create user")
+		file, _ := os.Open("qr.png")
+		defer file.Close()
+		img, _, _ := image.Decode(file)
+
+		var buf []byte
+		png.Encode(w, img)
+		base64Str := base64.StdEncoding.EncodeToString(buf)
+		QRcode, _ := json.Marshal(map[string]string{"qr_base64": base64Str})
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(QRcode)
+	} else {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		data := Data{Status: "Unsuccessful", Message: "User already exist."}
+		jsonStr, _ := json.Marshal(data)
+		w.Write(jsonStr)
 	}
+}
 
-	code := GenerateQRcode(u.Username)
-	SetSessionQR(u.Username, code)
+func CheckUserDB(username, password string) bool {
+	db.AutoMigrate(&User{})
 
-	file, _ := os.Open("qr.png")
-	defer file.Close()
-	img, _, _ := image.Decode(file)
+	var user User
+	result := db.Where("username = ?", username).First(&user)
+	if result.Error != nil {
+		ctx := context.Background()
+		hpassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		secretcode := GenerateSecretUserKey()
 
-	var buf []byte
-	png.Encode(w, img)
-	base64Str := base64.StdEncoding.EncodeToString(buf)
-	QRcode, _ := json.Marshal(map[string]string{"qr_base64": base64Str})
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(QRcode)
+		user := User{Username: username, Password: string(hpassword), Secret: secretcode}
+		if err := db.WithContext(ctx).Create(&user).Error; err != nil {
+			panic("failed to create user")
+		}
+		return false // user does not exist
+	} else {
+		return true //user exist
+	}
 }
 
 func GenerateSecretUserKey() string {

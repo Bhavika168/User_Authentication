@@ -18,7 +18,7 @@ func main() {
 
 	signupRouter := router.PathPrefix("/signup").Subrouter()
 	signupRouter.HandleFunc("", login.Signup).Methods(http.MethodGet)
-	signupRouter.HandleFunc("/otp", login.CheckQrOTP).Methods(http.MethodGet)
+	signupRouter.HandleFunc("/otp", login.CheckOTP).Methods(http.MethodGet)
 
 	loginRouter := router.PathPrefix("/login").Subrouter()
 	loginRouter.HandleFunc("", login.Login).Methods(http.MethodGet)
@@ -28,5 +28,5 @@ func main() {
 	homeRouter.Use(home.Auth)
 	homeRouter.HandleFunc("", home.Home).Methods(http.MethodGet)
 
-	log.Fatal(http.ListenAndServe(":9009", router))
+	log.Fatal(http.ListenAndServe(":8080", router))
 }
